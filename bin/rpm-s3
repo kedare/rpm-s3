@@ -111,11 +111,11 @@ def getclient(base, region):
         return boto.connect_s3(
             os.getenv('AWS_ACCESS_KEY'),
             os.getenv('AWS_SECRET_KEY'),
-            host="s3-{}.amazonaws.com".format(region)
+            host="s3-{0}.amazonaws.com".format(region)
         ).get_bucket(base.netloc)
     else:
         return boto.connect_s3(
-            host="s3-{}.amazonaws.com".format(region)
+            host="s3-{0}.amazonaws.com".format(region)
         ).get_bucket(base.netloc)
 
 
