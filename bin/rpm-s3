@@ -119,7 +119,7 @@ def getclient(base, region):
         ).get_bucket(base.netloc)
 
 
-def sign(rpmfile):
+def sign(rpmfile, options):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
     # TODO: check if file is indeed signed
     cmd = "rpm --resign '%s'" % rpmfile
@@ -127,7 +127,7 @@ def sign(rpmfile):
     try:
         child = pexpect.spawn(cmd)
         child.expect('Enter pass phrase: ')
-        child.sendline('')
+        child.sendline(options.passphrase)
         child.expect(pexpect.EOF)
     except pexpect.EOF, e:
         print "Unable to sign package '%s' - %s" % (rpmfile, child.before)
@@ -136,10 +136,7 @@ def sign(rpmfile):
 
 def sign_metadata(repomdfile, options):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
-    if options.batch:
-        cmd = ["gpg", "--batch", "--passphrase-fd 0", "--armor", repomdfile]
-    else:
-        cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
+    cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
     logging.info(cmd)
     try:
         subprocess.check_call(cmd)
@@ -193,7 +190,7 @@ def update_repodata(repopath, rpmfiles, options):
         logging.info("rpmfile: %s", rpmfile)
 
         if options.sign:
-            sign(rpmfile)
+            sign(rpmfile, options)
 
         mdgen._grabber = filegrabber
         # please, don't mess with my path in the <location> tags of primary.xml.gz
@@ -261,5 +258,6 @@ if __name__ == '__main__':
     parser.add_option('-d', '--delete', action='store_true', default=False)
     parser.add_option('-r', '--region', default='eu-central-1')
     parser.add_option('-B', '--batch', default=False)
+    parser.add_option('-P', '--passphrase', default='')
     options, args = parser.parse_args()
     main(options, args)
