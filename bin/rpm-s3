@@ -136,7 +136,10 @@ def sign(rpmfile, options):
 
 def sign_metadata(repomdfile, options):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
-    cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
+    if options.batch:
+        cmd = ["gpg", "--detach-sign", "--armor", '--batch', repomdfile]
+    else:
+        cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
     logging.info(cmd)
     try:
         subprocess.check_call(cmd)
