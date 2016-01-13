@@ -137,7 +137,10 @@ def sign(rpmfile, options):
 def sign_metadata(repomdfile, options):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
     if options.batch:
-        cmd = ["gpg", "--detach-sign", "--armor", "--batch", "--no-tty", repomdfile]
+        passphrase_file = open("passphrase", "w")
+        passphrase_file.write(options.passphrase)
+        passphrase_file.flush()
+        cmd = ["gpg", "--detach-sign", "--armor", "--batch", "--no-tty", "--passphrase-file", "passphrase", repomdfile]
     else:
         cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
     logging.info(cmd)
@@ -148,6 +151,9 @@ def sign_metadata(repomdfile, options):
         print "Unable to sign repository metadata '%s'" % (repomdfile)
         logging.error("Unable to sign repository metadata: %s", e)
         exit(1)
+    finally:
+        if options.batch:
+            passphrase_file.close()
 
 def setup_repository(repo, repopath):
     """Make sure a repo is present at repopath"""
