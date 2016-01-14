@@ -154,6 +154,7 @@ def sign_metadata(repomdfile, options):
     finally:
         if options.batch:
             passphrase_file.close()
+            os.unlink("passphrase")
 
 def setup_repository(repo, repopath):
     """Make sure a repo is present at repopath"""
