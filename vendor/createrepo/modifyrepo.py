@@ -218,7 +218,7 @@ def main(args):
         unique_md_filenames = re.match(r'[0-9a-f]{32,}-', name) != None
         compress_type = name.rsplit('.', 1)[1]
     except RepoMDError:
-        sumtype = 'sha256'
+        sumtype = 'sha1'
         unique_md_filenames = True
         compress_type = 'gz'
 

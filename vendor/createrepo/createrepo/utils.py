@@ -167,7 +167,7 @@ def checkAndMakeDir(directory):
             result = True
     return result
 
-def checksum_and_rename(fn_path, sumtype='sha256'):
+def checksum_and_rename(fn_path, sumtype='sha1'):
     """checksum the file rename the file to contain the checksum as a prefix
        return the new filename"""
     csum = misc.checksum(sumtype, fn_path)

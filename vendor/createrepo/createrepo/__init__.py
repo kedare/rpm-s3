@@ -63,7 +63,7 @@ class MetaDataConfig(object):
         self.excludes = []
         self.baseurl = None
         self.groupfile = None
-        self.sumtype = 'sha256'
+        self.sumtype = 'sha1'
         self.pretty = False
         self.cachedir = None
         self.use_cache = False
