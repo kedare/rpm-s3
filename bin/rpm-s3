@@ -111,15 +111,15 @@ def getclient(base, region):
         return boto.connect_s3(
             os.getenv('AWS_ACCESS_KEY'),
             os.getenv('AWS_SECRET_KEY'),
-            host="s3-{}.amazonaws.com".format(region)
+            host="s3-{0}.amazonaws.com".format(region)
         ).get_bucket(base.netloc)
     else:
         return boto.connect_s3(
-            host="s3-{}.amazonaws.com".format(region)
+            host="s3-{0}.amazonaws.com".format(region)
         ).get_bucket(base.netloc)
 
 
-def sign(rpmfile):
+def sign(rpmfile, options):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
     # TODO: check if file is indeed signed
     cmd = "rpm --resign '%s'" % rpmfile
@@ -127,16 +127,22 @@ def sign(rpmfile):
     try:
         child = pexpect.spawn(cmd)
         child.expect('Enter pass phrase: ')
-        child.sendline('')
+        child.sendline(options.passphrase)
         child.expect(pexpect.EOF)
     except pexpect.EOF, e:
         print "Unable to sign package '%s' - %s" % (rpmfile, child.before)
         logging.error("Unable to sign package: %s", e)
         exit(1)
 
-def sign_metadata(repomdfile):
+def sign_metadata(repomdfile, options):
     """Requires a proper ~/.rpmmacros file. See <http://fedoranews.org/tchung/gpg/>"""
-    cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
+    if options.batch:
+        passphrase_file = open("passphrase", "w")
+        passphrase_file.write(options.passphrase)
+        passphrase_file.flush()
+        cmd = ["gpg", "--detach-sign", "--armor", "--batch", "--no-tty", "--passphrase-file", "passphrase", repomdfile]
+    else:
+        cmd = ["gpg", "--detach-sign", "--armor", repomdfile]
     logging.info(cmd)
     try:
         subprocess.check_call(cmd)
@@ -145,6 +151,10 @@ def sign_metadata(repomdfile):
         print "Unable to sign repository metadata '%s'" % (repomdfile)
         logging.error("Unable to sign repository metadata: %s", e)
         exit(1)
+    finally:
+        if options.batch:
+            passphrase_file.close()
+            os.unlink("passphrase")
 
 def setup_repository(repo, repopath):
     """Make sure a repo is present at repopath"""
@@ -190,7 +200,7 @@ def update_repodata(repopath, rpmfiles, options):
         logging.info("rpmfile: %s", rpmfile)
 
         if options.sign:
-            sign(rpmfile)
+            sign(rpmfile, options)
 
         mdgen._grabber = filegrabber
         # please, don't mess with my path in the <location> tags of primary.xml.gz
@@ -228,7 +238,7 @@ def update_repodata(repopath, rpmfiles, options):
 
     # Generate repodata/repomd.xml.asc
     if options.sign:
-        sign_metadata(os.path.join(tmpdir, 'repodata', 'repomd.xml'))
+        sign_metadata(os.path.join(tmpdir, 'repodata', 'repomd.xml'), options)
 
     # Replace metadata on s3
     s3grabber.syncdir(os.path.join(tmpdir, 'repodata'), 'repodata')
@@ -257,5 +267,7 @@ if __name__ == '__main__':
     parser.add_option('-l', '--logfile')
     parser.add_option('-d', '--delete', action='store_true', default=False)
     parser.add_option('-r', '--region', default='eu-central-1')
+    parser.add_option('-B', '--batch', default=False)
+    parser.add_option('-P', '--passphrase', default='')
     options, args = parser.parse_args()
     main(options, args)
